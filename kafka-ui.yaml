@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui-deployment
+  namespace: kafka
+  labels:
+    app: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+      - name: kafka-ui
+        image: provectuslabs/kafka-ui:latest
+        ports:
+        - containerPort: 8080
+        env:
+        # ui界面显示的kafka集群名称
+        - name: KAFKA_CLUSTERS_0_NAME
+          value: "Kafka Cluster"
+        # 连接的kafka地址，可以为service.namespace.svc.cluster.local:9092
+        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+          value: "my-cluster-kafka-bootstrap:9092"
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1024Mi"
+            cpu: "1000m"
+      imagePullSecrets:
+      - name: container-registory-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui-service
+  namespace: kafka
+#  annotations:
+#    service.beta.kubernetes.io/alibaba-cloud-loadbalancer-address-type: "intranet"
+#    service.beta.kubernetes.io/alibaba-cloud-loadbalancer-spec: "slb.s1.small"
+spec:
+  selector:
+    app: kafka-ui
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    nodePort: 31006
